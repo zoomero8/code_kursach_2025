@@ -169,3 +169,8 @@ footer p {
     color: white; /* Цвет текста */
     border-color: #4caf50; /* Цвет границы */
 }
+
+.button-spacing {
+    margin-top: 20px; /* Увеличивает отступ сверху */
+    margin-bottom: 20px; /* Увеличивает отступ снизу */
+}
