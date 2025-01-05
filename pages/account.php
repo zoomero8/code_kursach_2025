@@ -75,9 +75,7 @@ if ($registration_date) {
                 <!-- Боковая панель -->
                 <div class="list-group">
                     <a href="#" class="list-group-item list-group-item-action active">Профиль</a>
-                    <a href="#" class="list-group-item list-group-item-action">Финансы</a>
-                    <a href="#" class="list-group-item list-group-item-action">Доходы</a>
-                    <a href="#" class="list-group-item list-group-item-action">Расходы</a>
+                    <a href="finances.php" class="list-group-item list-group-item-action">Финансы</a>
                 </div>
             </div>
             <div class="col-md-9">
