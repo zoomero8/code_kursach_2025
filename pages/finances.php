@@ -81,13 +81,12 @@ $result = $stmt->get_result();
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>#</th>
+                                    <th>№</th>
                                     <th>Тип</th>
                                     <th>Категория</th>
                                     <th>Сумма</th>
                                     <th>Дата</th>
                                     <th>Описание</th>
-                                    <th>Действие</th>
                                 </tr>
                             </thead>
                             <tbody>
