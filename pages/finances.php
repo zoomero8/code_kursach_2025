@@ -81,12 +81,12 @@ $result = $stmt->get_result();
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>№</th>
-                                    <th>Тип</th>
-                                    <th>Категория</th>
-                                    <th>Сумма</th>
-                                    <th>Дата</th>
-                                    <th>Описание</th>
+                                    <th style="width: 5%;">№</th>
+                                    <th style="width: 10%;">Тип</th>
+                                    <th style="width: 20%;">Категория</th>
+                                    <th style="width: 15%;">Сумма</th>
+                                    <th style="width: 15%;">Дата</th>
+                                    <th style="width: 35%;">Описание</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -96,7 +96,7 @@ $result = $stmt->get_result();
                                     ?>
                                     <tr class="table-row">
                                         <td><?= $counter++ ?></td> <!-- Генерация порядкового номера -->
-                                        <td><?= $row['type'] === 'income' ? 'Доход' : 'Расход' ?></td>
+                                        <td><?= htmlspecialchars($row['type']) ?></td>
                                         <td><?= htmlspecialchars($row['category']) ?></td>
                                         <td><?= htmlspecialchars(number_format($row['amount'], 2)) ?> ₽</td>
                                         <td><?= htmlspecialchars((new DateTime($row['date']))->format('d.m.Y')) ?></td>
@@ -112,9 +112,13 @@ $result = $stmt->get_result();
                                 <?php endwhile; ?>
                             </tbody>
                         </table>
-
-
                     </div>
+                </div>
+                <div class="text-end mb-5 mt-3">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#calculateModal">
+                        Рассчитать суммы
+                    </button>
                 </div>
             </div>
         </div>
@@ -163,8 +167,59 @@ $result = $stmt->get_result();
             </div>
         </div>
     </div>
+    <div class="modal fade" id="calculateModal" tabindex="-1" aria-labelledby="calculateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="calculateModalLabel">Результаты расчета</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Общая сумма доходов:</strong> <span id="totalIncome">0 ₽</span></p>
+                    <p><strong>Общая сумма расходов:</strong> <span id="totalExpense">0 ₽</span></p>
+                    <p><strong id="netProfitLabel">Чистая прибыль:</strong> <span id="netProfit">0 ₽</span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <script>
+        document.querySelector('[data-bs-target="#calculateModal"]').addEventListener('click', function () {
+            let rows = document.querySelectorAll('.table tbody tr');
+            let totalIncome = 0;
+            let totalExpense = 0;
 
+            rows.forEach(row => {
+                let type = row.cells[1].textContent.trim(); // Тип: Доход или Расход
+                let amount = parseFloat(row.cells[3].textContent.replace(/[^0-9.-]+/g, '')); // Сумма
+
+                if (type === 'Доход') {
+                    totalIncome += amount;
+                } else if (type === 'Расход') {
+                    totalExpense += amount;
+                }
+            });
+
+            // Расчет чистой прибыли
+            let netProfit = totalIncome - totalExpense;
+
+            // Обновление значений в модальном окне
+            document.getElementById('totalIncome').textContent = totalIncome.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('totalExpense').textContent = totalExpense.toLocaleString('ru-RU') + ' ₽';
+
+            // Проверка на прибыль или убыток
+            if (netProfit > 0) {
+                document.getElementById('netProfitLabel').textContent = 'Чистая прибыль:';
+            } else {
+                document.getElementById('netProfitLabel').textContent = 'Убыток:';
+            }
+
+            document.getElementById('netProfit').textContent = netProfit.toLocaleString('ru-RU') + ' ₽';
+        });
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
