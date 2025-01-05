@@ -174,3 +174,17 @@ footer p {
     margin-top: 20px; /* Увеличивает отступ сверху */
     margin-bottom: 20px; /* Увеличивает отступ снизу */
 }
+
+/* Скрыть кнопки по умолчанию */
+.delete-btn {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* Показать кнопки при наведении на строку */
+.table-row:hover .delete-btn {
+    visibility: visible;
+    opacity: 1;
+}
+
