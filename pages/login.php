@@ -3,28 +3,35 @@ require "connectdb.php";
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+    // Проверка существования ключей в массиве $_POST
+    $email = isset($_POST['email']) ? $_POST['email'] : null;
+    $password = isset($_POST['password']) ? $_POST['password'] : null;
 
-    $stmt = $mysql->prepare("SELECT id, name, password_hash FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $stmt->bind_result($id, $name, $password_hash);
-    $stmt->fetch();
+    // Если ключи существуют, продолжаем обработку
+    if ($email && $password) {
+        $stmt = $mysql->prepare("SELECT id, name, password_hash FROM users WHERE email = ?");
+        $stmt->bind_param("s", $email); 
+        $stmt->execute();
+        $stmt->bind_result($id, $name, $password_hash);
+        $stmt->fetch();
 
-    if ($id && password_verify($password, $password_hash)) {
-        $_SESSION['user_id'] = $id;
-        $_SESSION['user_name'] = $name;
-        header('Location: account.php');
-        exit();
+        if ($id && password_verify($password, $password_hash)) {
+            $_SESSION['user_id'] = $id;
+            $_SESSION['user_name'] = $name;
+            header('Location: account.php');
+            exit();
+        } else {
+            $error = 'Неверный email или пароль.';
+        }
+        $stmt->close();
     } else {
-        $error = 'Неверный email или пароль.';
+        $error = 'Поля email и пароль обязательны для заполнения.';
     }
-    $stmt->close();
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <!-- Навигационная панель -->
     <nav class="navbar navbar-expand-lg">
@@ -53,11 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <form method="POST">
                             <div class="mb-3">
                                 <label for="login-email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="login-email" name="email" placeholder="Введите ваш email" required>
+                                <input type="email" class="form-control" id="login-email" name="email"
+                                    placeholder="Введите ваш email" required>
                             </div>
                             <div class="mb-3">
                                 <label for="login-password" class="form-label">Пароль</label>
-                                <input type="password" class="form-control" id="login-password" name="password" placeholder="Введите ваш пароль" required>
+                                <input type="password" class="form-control" id="login-password" name="password"
+                                    placeholder="Введите ваш пароль" required>
                             </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn custom-login-btn">Войти</button>
@@ -74,4 +84,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

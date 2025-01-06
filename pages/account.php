@@ -95,7 +95,7 @@ if ($registration_date) {
 
                         <!-- Кнопка для добавления или изменения данных -->
                         <?php if ($dataExists): ?>
-                            <button type="button" class="btn btn-warning button-spacing" data-bs-toggle="modal"
+                            <button type="button" class="btn btn-primary my-3" data-bs-toggle="modal"
                                 data-bs-target="#editCompanyModal">
                                 Изменить данные
                             </button>
