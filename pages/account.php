@@ -13,8 +13,15 @@ $stmt = $mysql->prepare("SELECT id FROM companies WHERE user_id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
+$user_companies = $result->fetch_all(MYSQLI_ASSOC);
 $dataExists = $result->num_rows > 0;
 $stmt->close();
+
+if (!is_array($user_companies)) {
+    $user_companies = [];
+}
+
+
 
 // Получение данных компании для текущего пользователя
 $stmt = $mysql->prepare("
@@ -28,8 +35,42 @@ $stmt->bind_result($company_name, $inn, $kpp, $legal_address, $phone, $email, $r
 $stmt->fetch();
 $stmt->close();
 
+// Получение текущей выбранной компании
+$current_company_id = $_SESSION['current_company_id'] ?? null;
+
+// Установить текущую компанию, если не выбрана
+if (!$current_company_id && count($user_companies) > 0) {
+    $current_company_id = $user_companies[0]['id'];
+    $_SESSION['current_company_id'] = $current_company_id;
+}
+
+// Получение данных выбранной компании
+if ($current_company_id) {
+    $stmt = $mysql->prepare("
+        SELECT company_name, inn, kpp, legal_address, phone, email, registration_date, ogrn, website, description 
+        FROM companies 
+        WHERE user_id = ? AND id = ?
+    ");
+    $stmt->bind_param("ii", $user_id, $current_company_id);
+    $stmt->execute();
+    $stmt->bind_result($company_name, $inn, $kpp, $legal_address, $phone, $email, $registration_date, $ogrn, $website, $description);
+    $stmt->fetch();
+    $stmt->close();
+} else {
+    $company_name = null;
+    $inn = $kpp = $legal_address = $phone = $email = $ogrn = $website = $description = null;
+    $registration_date = 'Нет данных';
+}
+
+$stmt = $mysql->prepare("SELECT id, company_name FROM companies WHERE user_id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user_companies = $result->fetch_all(MYSQLI_ASSOC);
+
+
 // Форматирование даты в формате РФ
-if ($registration_date) {
+if (!empty($registration_date) && strtotime($registration_date)) {
     $registration_date = (new DateTime($registration_date))->format('d.m.Y');
 } else {
     $registration_date = 'Нет данных';
@@ -43,6 +84,7 @@ if ($registration_date) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>УчетОнлайн - Личный кабинет</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -91,7 +133,34 @@ if ($registration_date) {
                 <!-- Раздел контента -->
                 <div class="card mt-4">
                     <div class="card-body">
-                        <h4 class="card-title">Основные данные компании</h4>
+                        <h4 class="card-title d-flex align-items-center"> Данные компании
+                            <div class="dropdown">
+                                <?php
+                                $current_company = array_filter($user_companies, fn($c) => $c['id'] == $current_company_id);
+                                $current_company_name = $current_company ? reset($current_company)['company_name'] : "«Не выбрана»";
+                                ?>
+                                <button class="btn btn-outline-primary dropdown-toggle ms-2" type="button"
+                                    id="companyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <?= htmlspecialchars($current_company_name) ?>
+                                </button>
+
+                                <ul class="dropdown-menu" aria-labelledby="companyDropdown">
+                                    <?php foreach ($user_companies as $company): ?>
+                                        <li>
+                                            <a class="dropdown-item"
+                                                href="change_company.php?company_id=<?= $company['id'] ?>">
+                                                <?= htmlspecialchars($company['company_name']) ?>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                            <button type="button" class="btn btn-outline-success btn-sm ms-2" data-bs-toggle="modal"
+                                data-bs-target="#addCompanyModal">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </h4>
+
 
                         <!-- Кнопка для добавления или изменения данных -->
                         <?php if ($dataExists): ?>
@@ -105,6 +174,10 @@ if ($registration_date) {
                                 Добавить данные
                             </button>
                         <?php endif; ?>
+                        <!-- <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#selectCompanyModal">
+                            Выбрать компанию
+                        </button> -->
 
 
                         <!-- Таблица данных компании -->
@@ -316,6 +389,7 @@ if ($registration_date) {
             </form>
         </div>
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

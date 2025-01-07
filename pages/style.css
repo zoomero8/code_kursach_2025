@@ -188,3 +188,7 @@ footer p {
     opacity: 1;
 }
 
+.highlighted-company {
+    color: #007bff; /* Синий цвет */
+    font-weight: bold; /* Жирный шрифт */
+}

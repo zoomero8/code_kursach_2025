@@ -9,16 +9,29 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Получение данных доходов/расходов
+// Получение текущей выбранной компании из сессии
+$current_company_id = $_SESSION['current_company_id'] ?? null;
+
+
+// Получение данных доходов/расходов для текущей компании
 $stmt = $mysql->prepare("
     SELECT id, type, category, amount, date, description
     FROM financial_records
-    WHERE user_id = ?
+    WHERE user_id = ? AND company_id = ?
     ORDER BY id ASC
 ");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("ii", $user_id, $current_company_id);
 $stmt->execute();
 $result = $stmt->get_result();
+
+if ($current_company_id) {
+    $stmt = $mysql->prepare("SELECT company_name FROM companies WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $current_company_id, $user_id);
+    $stmt->execute();
+    $stmt->bind_result($current_company_name);
+    $stmt->fetch();
+    $stmt->close();
+}
 ?>
 
 <!DOCTYPE html>
@@ -30,6 +43,9 @@ $result = $stmt->get_result();
     <title>УчетОнлайн - Финансы</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 </head>
 
 <body>
@@ -68,7 +84,11 @@ $result = $stmt->get_result();
                 <!-- Прямоугольник с описанием -->
                 <div class="card">
                     <div class="card-body">
-                        <h3 class="card-title">Финансы</h3>
+                        <h3 class="card-title">
+                            Финансы компании <span
+                                class="highlighted-company"><?= htmlspecialchars($current_company_name ?? ' ') ?></span>
+                        </h3>
+
                         <p>Здесь вы можете управлять записями доходов и расходов, а также добавлять новые данные.</p>
                     </div>
                 </div>
@@ -104,8 +124,16 @@ $result = $stmt->get_result();
                                         <td>
                                             <form action="delete_transaction.php" method="POST" style="display:inline;">
                                                 <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                                <button type="submit"
-                                                    class="btn btn-danger btn-sm delete-btn">Удалить</button>
+                                                <!-- <button type="submit" class="btn btn-danger btn-sm delete-btn"
+                                                    onclick="return confirm('Вы уверены, что хотите удалить эту запись?');">
+                                                    Удалить
+                                                </button> -->
+                                                <!-- Кнопка для открытия модального окна -->
+                                                <button type="button" class="btn btn-danger btn-sm delete-btn"
+                                                    data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
+                                                    data-id="<?= $row['id'] ?>">
+                                                    Удалить
+                                                </button>
                                             </form>
                                         </td>
                                     </tr>
@@ -115,10 +143,15 @@ $result = $stmt->get_result();
                     </div>
                 </div>
                 <div class="text-end mb-5 mt-3">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                        data-bs-target="#calculateModal">
-                        Рассчитать суммы
-                    </button>
+                    <div class="text-end mb-5 mt-3">
+                        <?php if ($result->num_rows > 0): // Проверяем, есть ли записи в таблице ?>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#calculateModal">
+                                Рассчитать суммы
+                            </button>
+                        <?php endif; ?>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -152,8 +185,10 @@ $result = $stmt->get_result();
                         </div>
                         <div class="mb-3">
                             <label for="date" class="form-label">Дата</label>
-                            <input type="date" class="form-control" id="date" name="date" required>
+                            <!-- Поле с форматированием -->
+                            <input type="text" id="datePicker" class="form-control" name="date" required>
                         </div>
+
                         <div class="mb-3">
                             <label for="description" class="form-label">Описание</label>
                             <textarea class="form-control" id="description" name="description" rows="3"></textarea>
@@ -185,6 +220,29 @@ $result = $stmt->get_result();
             </div>
         </div>
     </div>
+    <!-- Модальное окно для подтверждения удаления -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteModalLabel">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Вы уверены, что хотите удалить эту запись? Это действие нельзя отменить.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <form id="deleteForm" action="delete_transaction.php" method="POST">
+                        <input type="hidden" name="id" id="deleteId">
+                        <button type="submit" class="btn btn-danger">Удалить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         document.querySelector('[data-bs-target="#calculateModal"]').addEventListener('click', function () {
@@ -220,6 +278,36 @@ $result = $stmt->get_result();
             document.getElementById('netProfit').textContent = netProfit.toLocaleString('ru-RU') + ' ₽';
         });
     </script>
+
+    <script>
+        const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+        confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
+            // Кнопка, которая вызвала модальное окно
+            const button = event.relatedTarget;
+            // Получение ID записи из data-id атрибута
+            const id = button.getAttribute('data-id');
+            // Установка ID в скрытое поле формы
+            const deleteInput = document.getElementById('deleteId');
+            deleteInput.value = id;
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            flatpickr("#datePicker", {
+                dateFormat: "d.m.Y",
+                defaultDate: new Date(), // Устанавливает текущую дату
+                allowInput: true,
+                locale: {
+                    firstDayOfWeek: 1 // Неделя начинается с понедельника
+                }
+            });
+        });
+
+    </script>
+
+
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
