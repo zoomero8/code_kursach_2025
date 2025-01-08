@@ -136,7 +136,9 @@ if (!empty($registration_date) && strtotime($registration_date)) {
                         <h4 class="card-title d-flex align-items-center"> Данные компании
                             <div class="dropdown">
                                 <?php
-                                $current_company = array_filter($user_companies, fn($c) => $c['id'] == $current_company_id);
+                                $current_company = array_filter($user_companies, function ($c) use ($current_company_id) {
+                                    return $c['id'] == $current_company_id;
+                                });
                                 $current_company_name = $current_company ? reset($current_company)['company_name'] : "«Не выбрана»";
                                 ?>
                                 <button class="btn btn-outline-primary dropdown-toggle ms-2" type="button"
