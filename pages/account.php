@@ -248,6 +248,7 @@ if (!empty($registration_date) && strtotime($registration_date)) {
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
+                        <p class="text-danger fw-bold">* Все поля обязательны для заполнения</p>
                         <div class="mb-3">
                             <label for="company_name" class="form-label">Название компании</label>
                             <input type="text" class="form-control" id="company_name" name="company_name" required>
@@ -361,8 +362,33 @@ if (!empty($registration_date) && strtotime($registration_date)) {
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
+                            <label for="company_name" class="form-label">Название компании</label>
+                            <input type="text" name="company_name" class="form-control"
+                                value="<?= htmlspecialchars($company_name) ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="inn" class="form-label">ИНН</label>
+                            <input type="text" name="inn" class="form-control" value="<?= htmlspecialchars($inn) ?>"
+                                pattern="\d{10}" title="ИНН должен содержать 10 цифр" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="kpp" class="form-label">КПП</label>
+                            <input type="text" name="kpp" class="form-control" value="<?= htmlspecialchars($kpp) ?>"
+                                pattern="\d{9}" title="КПП должен содержать 9 цифр" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ogrn" class="form-label">ОГРН</label>
+                            <input type="text" name="ogrn" class="form-control" value="<?= htmlspecialchars($ogrn) ?>"
+                                pattern="\d{13}" title="ОГРН должен содержать 13 цифр" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="legal_address" class="form-label">Юридический адрес</label>
+                            <input type="text" name="legal_address" class="form-control"
+                                value="<?= htmlspecialchars($legal_address) ?>" required>
+                        </div>
+                        <div class="mb-3">
                             <label for="phone" class="form-label">Телефон</label>
-                            <input type="text" name="phone" class="form-control" value="<?= htmlspecialchars($phone) ?>"
+                            <input type="tel" name="phone" class="form-control" value="<?= htmlspecialchars($phone) ?>"
                                 required>
                         </div>
                         <div class="mb-3">
@@ -380,17 +406,22 @@ if (!empty($registration_date) && strtotime($registration_date)) {
                             <textarea name="description"
                                 class="form-control"><?= htmlspecialchars($description) ?></textarea>
                         </div>
+                        <div class="mb-3">
+                            <label for="registration_date" class="form-label">Дата регистрации</label>
+                            <input type="date" name="registration_date" class="form-control"
+                                value="<?php echo htmlspecialchars((new DateTime($registration_date))->format('Y-m-d')); ?>"
+                                required>
+                        </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-danger"
-                            data-bs-dismiss="modal">Закрыть</button>
-                        <button type="submit" class="btn btn-primary btn-sucsess">Сохранить изменения</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
                     </div>
-
                 </div>
             </form>
         </div>
     </div>
+
 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
